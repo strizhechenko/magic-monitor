@@ -1,0 +1,54 @@
+#!/bin/bash
+
+set -eu
+
+CONFIG=/var/lib/monitor-state
+
+run_socat() {
+	socat -T 1 -b 50000000  UDP4-LISTEN:44,fork - 2>/dev/null
+}
+
+value_exist() {
+	while read var val; do
+		[ "$var" = "$1" ] && return 0
+	done < $CONFIG
+	return 1
+}
+
+value_add() {
+	echo $1 $2 >> $CONFIG
+}
+
+value_rewrite() {
+	sed -e "s/$1 .*/$1 $2/g" -i $CONFIG
+}
+
+conf2html() {
+	while read var val; do
+		[ "$val" = '0' ] && color=green || color=red
+		echo '<div class="col-sm-1 col-md-2"> <div class="thumbnail tile  tile-'$color'"> <a href="#" > <h3 class="tile-text">'${var//_/ }'</h3> </a> </div> </div>'
+	done < $CONFIG
+}
+
+generate() {
+	while IFS= read -r line; do
+		[[ "$line" = *@@@TEMPLATE%%%* ]] && conf2html || echo "$line"
+	done < /var/www/html/index.html.tmplt > /var/www/html/index.html
+}
+
+renew() {
+	value_exist $1 && value_rewrite $1 $2 || value_add $1 $2
+	generate
+}
+
+pipe_to_conf() {
+	while read var val; do
+		renew "$var" "$val"
+	done
+}
+
+main() {
+	run_socat | pipe_to_conf
+}
+
+main $@
