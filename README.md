@@ -3,7 +3,7 @@ magic-monitor
 
 Simple bash script, that generate html page with ok / fail items on udp packet arrive.
 
-All you need - is socat: http://www.dest-unreach.org/socat/
+All you need is ~~love~~^W socat: http://www.dest-unreach.org/socat/
 
 Run monitor-state and send to server some udp packet. Example for linux:
 
